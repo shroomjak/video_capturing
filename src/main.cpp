@@ -1,11 +1,13 @@
 //#include <opencv2/opencv.hpp>//OpenCV header to use VideoCapture class//
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include "source.hpp"
 #include <iostream>
+#include <chrono>
 
 int main() {
-   cv::Mat myImage;   //Declaring a matrix to load the frames//
+   cv::Mat my_image;   //Declaring a matrix to load the frames//
 
    cv::namedWindow("Video Player", cv::WINDOW_NORMAL);//Declaring the video to show the video//
 
@@ -17,23 +19,47 @@ int main() {
       return -1;
    }
 
+   // configure capture properties
    cap.set(cv::CAP_PROP_FRAME_WIDTH, config::WIDTH);
    cap.set(cv::CAP_PROP_FRAME_HEIGHT, config::HEIGHT);
+   cap.set(cv::CAP_PROP_FPS, config::FPS);
 
-   double fps = cap.get(cv::CAP_PROP_FPS);
-   int delay = (fps > 0) ? (1000 / fps) : 1;
+   //double fps = cap.get(cv::CAP_PROP_FPS);
+   //int delay = (fps > 0) ? (1000 / fps) : 1;
+
+   int frame_count = 0;
+   double current_fps = 0.0;
+
+   auto start_time = std::chrono::steady_clock::now();
 
    while(1){ //Taking an everlasting loop to show the video//
-      cap >> myImage;
-      if (myImage.empty()){ //Breaking the loop if no video frame is detected//
+      cap.read(my_image);
+      if (my_image.empty()){ //Breaking the loop if no video frame is detected//
          break;
       }
-      cv::imshow("Video Player", myImage);//Showing the video//
-      char c = (char)cv::waitKey(delay);
+      frame_count++;
+      auto current_time = std::chrono::steady_clock::now();
+      std::chrono::duration<double> elapsed_time = current_time - start_time;
+
+      if (elapsed_time.count() >= 1.0) {
+         current_fps = frame_count / elapsed_time.count();
+         std::cout << "Current FPS: " << current_fps << std::endl;
+
+         frame_count = 0;
+         start_time = current_time;
+      }
+
+      std::string fps_text = "FPS: " + std::to_string(current_fps).substr(0, 4); 
+      cv::putText(my_image, fps_text, cv::Point(30, 50), 
+                  cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+
+      cv::imshow("Video Player", my_image);//Showing the video//
+      char c = (char)cv::waitKey(1);
       if (c == 'q'){ //If q is entered break the loop//
          break;
       }
    }
    cap.release();//Releasing the buffer memory//
+   cv::destroyAllWindows();//Destroying all the windows opened by the program//
    return 0;
 }
