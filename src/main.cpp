@@ -1,13 +1,11 @@
 //#include <opencv2/opencv.hpp>//OpenCV header to use VideoCapture class//
-#include <opencv2/videoio.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 #include "source.hpp"
 #include <iostream>
 #include <chrono>
 
 int main() {
-   cv::Mat my_image;   //Declaring a matrix to load the frames//
+   cv::Mat src, dst;   //Declaring a matrix to load the frames//
 
    cv::namedWindow("Video Player", cv::WINDOW_NORMAL);//Declaring the video to show the video//
 
@@ -33,8 +31,8 @@ int main() {
    auto start_time = std::chrono::steady_clock::now();
 
    while(1){ //Taking an everlasting loop to show the video//
-      cap.read(my_image);
-      if (my_image.empty()){ //Breaking the loop if no video frame is detected//
+      cap.read(src);
+      if (src.empty()){ //Breaking the loop if no video frame is detected//
          break;
       }
       frame_count++;
@@ -48,12 +46,18 @@ int main() {
          frame_count = 0;
          start_time = current_time;
       }
+      
+      cv::Mat kernel = (cv::Mat_<float>(3, 3) << -1, 0, 1,
+                                                 -1, 0, 1,
+                                                 -1, 0, 1); //Defining a sharpening kernel//
+                                                 
+      cv::filter2D(src, dst, -1, kernel, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT); //Applying the filter to the video frame//
 
       std::string fps_text = "FPS: " + std::to_string(current_fps).substr(0, 4); 
-      cv::putText(my_image, fps_text, cv::Point(30, 50), 
+      cv::putText(dst, fps_text, cv::Point(30, 50), 
                   cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 
-      cv::imshow("Video Player", my_image);//Showing the video//
+      cv::imshow("Video Player", dst);//Showing the video//
       char c = (char)cv::waitKey(1);
       if (c == 'q'){ //If q is entered break the loop//
          break;
