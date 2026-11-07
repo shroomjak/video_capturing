@@ -1,6 +1,7 @@
-//#include <opencv2/opencv.hpp>//OpenCV header to use VideoCapture class//
+//OpenCV header to use VideoCapture class//
 #include <opencv2/opencv.hpp>
 #include "source.hpp"
+#include "processing.hpp"
 #include <iostream>
 #include <chrono>
 
@@ -47,11 +48,10 @@ int main() {
          start_time = current_time;
       }
       
-      cv::Mat kernel = (cv::Mat_<float>(3, 3) << -1, 0, 1,
-                                                 -1, 0, 1,
-                                                 -1, 0, 1); //Defining a sharpening kernel//
-                                                 
-      cv::filter2D(src, dst, -1, kernel, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT); //Applying the filter to the video frame//
+
+      cv::Mat kernel = cv::Mat::ones(10, 10, CV_32F); //Defining a smoothing kernel//
+      processing::linear_filter(src, dst, kernel);
+      //std::cout << src << std::endl << dst << std::endl;
 
       std::string fps_text = "FPS: " + std::to_string(current_fps).substr(0, 4); 
       cv::putText(dst, fps_text, cv::Point(30, 50), 
